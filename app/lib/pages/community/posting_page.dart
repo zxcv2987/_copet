@@ -49,10 +49,10 @@ class PostingPage extends ConsumerWidget {
       try{
         await PostPosting.postPosting(
             owner_id: 1,
-            title: state.title ?? '제목없음',
+            title: state.title,
             body: state.body,
             category: state.category,
-            imagePaths: null ?? state.imagePaths
+            imagePaths: state.imagePaths != null ? state.imagePaths : null
         );
       }
       catch(err){
@@ -67,18 +67,23 @@ class PostingPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    ref.invalidate(PostingProvider);
     //postProvider 초기화
 
     return Scaffold(
         appBar: PostAppBar( ()=> postPostingData(context, ref) ),
-        body: GestureDetector(
-          onDoubleTap: (){
-            FocusManager.instance.primaryFocus?.unfocus();
+        //뒤로가기 감지 시 상태 초기화
+        body: PopScope(
+          onPopInvoked: (bool didPop){
+            ref.invalidate(PostingProvider);
           },
-          child: Container(
-            color: WHITE,
-            child: _Body(),
+          child: GestureDetector(
+            onDoubleTap: (){
+              FocusManager.instance.primaryFocus?.unfocus();
+            },
+            child: Container(
+              color: WHITE,
+              child: _Body(),
+            ),
           ),
         ),
       resizeToAvoidBottomInset: false,
@@ -227,9 +232,26 @@ class _BottomAppBar extends ConsumerWidget {
         children: [
           IconButton(
             onPressed: ()async{
+              final imageLimit = 3;
+              final imageState = ref.watch(PostingProvider).imagePaths;
               var picker = ImagePicker();
-              final List<XFile>? images = await picker.pickMultiImage();
-              if(images != null) {
+              final List<XFile>? images = await picker.pickMultiImage( imageQuality: 50);
+              //한 번에 3개가 넘는 이미지를 넣으려 할 때
+              if(images != null && images.length > imageLimit){
+                images.removeRange(imageLimit, images.length);
+                showDialog(context: context, builder: (context){
+                  return CommonDialog(content: "사진은 3개까지 선택 가능합니다",);
+                });
+              }
+              //이전에 imageState에 이미지가 들어왔다면, 최대 5개까지만 저장하도록 리스트 슬라이싱
+              if(imageState != null && imageState.length + images!.length > imageLimit){
+                images.removeRange(imageLimit-imageState.length, images.length);
+                showDialog(context: context, builder: (context){
+                  return CommonDialog(content: "사진은 5개까지 업로드 가능합니다",);
+                });
+              }
+              //state에 이미지패스 저장
+              if(images != null && images.length < imageLimit) {
                 final imagePaths = images.map((e) => e.path).toList();
                 ref.read(PostingProvider.notifier).updatePosting(
                     images: imagePaths);
