@@ -4,6 +4,7 @@ import { IsEnum, IsNumber, IsString, validateSync } from 'class-validator';
 enum Environment {
   Local = 'local',
   Dev = 'dev',
+  Prod = 'prod',
 }
 
 class EnvironmentVariables {
@@ -42,6 +43,33 @@ class EnvironmentVariables {
 
   @IsString()
   REDIRECT_URL: string;
+
+  @IsString()
+  KAKAO_API_KEY: string;
+
+  @IsString()
+  KAKAO_CALLBACK_URL: string;
+
+  @IsString()
+  AWS_ACCESS_KEY_ID: string;
+
+  @IsString()
+  AWS_SECRET_ACCESS_KEY: string;
+
+  @IsString()
+  AWS_S3_BUCKET_NAME: string;
+
+  @IsString()
+  AWS_S3_REGION: string;
+
+  @IsString()
+  REDIS_HOST: string;
+
+  @IsNumber()
+  REDIS_PORT: number;
+
+  @IsString()
+  REDIS_PASSWORD: string;
 }
 
 export function validate(config: Record<string, unknown>) {
